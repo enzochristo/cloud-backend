@@ -31,6 +31,26 @@
 $ npm install
 ```
 
+## Run a local database for development
+
+This project uses Prisma and needs a running PostgreSQL database.
+
+```bash
+$ docker compose up -d postgres
+```
+
+Then set `DATABASE_URL` in your `.env` to point to the local database:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/demaybank?schema=public"
+```
+
+If this is the first time you are using the local database, create the tables:
+
+```bash
+$ npx prisma db push
+```
+
 ## Compile and run the project
 
 ```bash

@@ -1,0 +1,10 @@
+model Loan {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  initialAmount    Decimal
+  interest         Decimal
+  monthlyPayment   Decimal
+  loanDate         DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id])
+}
