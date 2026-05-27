@@ -4,6 +4,12 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = Number(process.env.PORT ?? 3000);
+  const host = process.env.HOST ?? '0.0.0.0';
+
+  app.use('/health', (_req: any, res: any) => {
+    res.status(200).json({ status: 'ok' });
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Demay Bank API')
@@ -14,6 +20,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  await app.listen(port, host);
 }
 void bootstrap();

@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { UserService } from '../service/user.service';
 import { RegisterDto } from '../dtos/register.dto';
@@ -8,6 +15,12 @@ import { LoginDto } from '../dtos/login.dto';
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List all users' })
+  findAll() {
+    return this.userService.findAll();
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Create a new bank account' })

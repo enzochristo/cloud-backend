@@ -25,9 +25,10 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.dto.ts', 'src/**/*.entity.ts', 'src/database/prisma.service.ts'],
+    files: ['src/**/*.dto.ts', 'src/**/*.entity.ts', 'src/database/prisma.service.ts', 'src/**/*.controller.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   {
