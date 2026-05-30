@@ -3,7 +3,23 @@
 Plataforma escalável de processamento de pagamentos construída na AWS.  
 Projeto da disciplina **Computação em Nuvem — Insper 2026**.
 
-📄 **[Relatório de Testes de Carga](https://enzochristo.github.io/cloud-backend/)**
+---
+
+## Links Rápidos
+
+| Recurso | Link |
+|---------|------|
+| 🖥️ Frontend | `<!-- ADICIONAR LINK DO FRONTEND -->` |
+| 🎥 Vídeo de Apresentação | `<!-- ADICIONAR LINK DO YOUTUBE -->` |
+| 📊 Relatório de Testes de Carga | [Acessar](https://enzochristo.github.io/cloud-backend/) |
+
+---
+
+## Relatório do Projeto
+
+<!-- Quando o PDF estiver pronto, faça upload para a pasta /docs do repositório e substitua a linha abaixo pelo link gerado -->
+
+> 📎 O relatório técnico completo do projeto será disponibilizado em breve.
 
 ---
 
