@@ -9,7 +9,7 @@ Projeto da disciplina **Computação em Nuvem — Insper 2026**.
 
 | Recurso | Link |
 |---------|------|
-| 🖥️ Frontend | `<!-- ADICIONAR LINK DO FRONTEND -->` |
+| 🖥️ Frontend | [DemayBank](https://github.com/enzochristo/demay-bank) |
 | 🎥 Vídeo de Apresentação | `<!-- ADICIONAR LINK DO YOUTUBE -->` |
 | 📊 Relatório de Testes de Carga | [Acessar](https://enzochristo.github.io/cloud-backend/) |
 
@@ -17,9 +17,7 @@ Projeto da disciplina **Computação em Nuvem — Insper 2026**.
 
 ## Relatório do Projeto
 
-<!-- Quando o PDF estiver pronto, faça upload para a pasta /docs do repositório e substitua a linha abaixo pelo link gerado -->
-
-> 📎 O relatório técnico completo do projeto será disponibilizado em breve.
+> 📎 [Relatório Técnico Completo (PDF)](relatorio_arquitetura_final.pdf)
 
 ---
 
@@ -346,11 +344,3 @@ Realizados com **Apache JMeter 5.6.3** contra o ambiente de produção AWS.
 | Rajada (Burst) | 300 | 900 | 0% | 2.504ms |
 
 **1.907 transações processadas de ponta a ponta** (API Gateway → Lambda → SQS → Lambda → RDS) sem nenhuma perda.
-
-📄 [Ver relatório técnico completo](https://enzochristo.github.io/cloud-backend/)
-
----
-
-## Licença
-
-Projeto acadêmico — Insper 2026.
