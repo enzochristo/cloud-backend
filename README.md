@@ -17,7 +17,7 @@ Projeto da disciplina **Computação em Nuvem — Insper 2026**.
 
 ## Relatório do Projeto
 
-> 📎 [Relatório Técnico Completo (PDF)](relatorio_arquitetura_final.pdf)
+> 📎 [Relatório Técnico Completo (PDF)](https://github.com/enzochristo/cloud-backend/raw/main/relatorio_arquitetura_final.pdf)
 
 ---
 
