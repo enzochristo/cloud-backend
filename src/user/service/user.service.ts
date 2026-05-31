@@ -31,4 +31,12 @@ export class UserService {
     const { password: _, ...result } = user;
     return result;
   }
+
+  findById(id: number) {
+    return this.userRepository.findById(id)
+  }
+
+  addBalance(id: number, amount: number) {
+    return this.userRepository.addBalance(id, amount)
+  }
 }

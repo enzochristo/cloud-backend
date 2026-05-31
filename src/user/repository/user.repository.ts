@@ -33,4 +33,14 @@ export class UserRepository {
       },
     });
   }
+  findById(id: number) {
+    return this.prisma.user.findUnique({ where: { id } })
+  }
+
+  addBalance(id: number, amount: number) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { balance: { increment: amount } },
+    })
+  }
 }
