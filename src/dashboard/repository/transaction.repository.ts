@@ -11,6 +11,10 @@ export class TransactionRepository {
       where: {
         OR: [{ senderId: userId }, { recipientId: userId }],
       },
+      include: {
+        sender: { select: { id: true, name: true } },
+        recipient: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: 'desc' },
     })
   }
