@@ -1,118 +1,346 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Demay Bank — Cloud Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Plataforma escalável de processamento de pagamentos construída na AWS.  
+Projeto da disciplina **Computação em Nuvem — Insper 2026**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Links Rápidos
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Recurso | Link |
+|---------|------|
+| 🖥️ Frontend | [DemayBank](https://dnf6w4c31atxz.cloudfront.net/register) |
+| 🎥 Vídeo de Apresentação | `<!-- ADICIONAR LINK DO YOUTUBE -->` |
+| 📊 Relatório de Testes de Carga | [Acessar](https://enzochristo.github.io/cloud-backend/) |
 
-## Project setup
+---
 
-```bash
-$ npm install
+## Relatório do Projeto
+
+> 📎 [Relatório Técnico Completo (PDF)](https://github.com/enzochristo/cloud-backend/raw/main/relatorio_arquitetura_final.pdf)
+
+---
+
+## Arquitetura
+
+```mermaid
+graph TB
+    subgraph S3["☁️ S3"]
+        CLIENT["🖥️ CLIENT\nFrontend"]
+    end
+
+    subgraph ECS["⚙️ ECS"]
+        SERVER["SERVER\nNestJS"]
+    end
+
+    subgraph RDS["🗄️ RDS"]
+        PG["POSTGRESQL"]
+    end
+
+    subgraph LAMBDA1["λ Lambda 1"]
+        VAL["VALIDAÇÃO\nE PENDÊNCIA\nNO PAGAMENTO"]
+    end
+
+    subgraph SQS_BOX["📨 SQS"]
+        FILA["FILA"]
+    end
+
+    subgraph LAMBDA2["λ Lambda 2"]
+        PROC["TRANSAÇÃO FINANCEIRA\nATUALIZAÇÃO DO STATUS"]
+    end
+
+    CLIENT -->|ALB| SERVER
+    SERVER -->|RDS| PG
+    CLIENT -->|API GATEWAY| VAL
+    VAL -->|enfileira| FILA
+    FILA -->|trigger| PROC
+    PROC -->|RDS Proxy| PG
 ```
 
-## Run a local database for development
+### Topologia de Rede — VPC
 
-This project uses Prisma and needs a running PostgreSQL database.
+```mermaid
+graph TB
+    subgraph FORA["Fora da VPC"]
+        INTERNET["🌐 Internet"]
+        CF["☁️ S3 + CloudFront"]
+        APIGW["🔀 API Gateway"]
+        SQS["📨 SQS"]
+    end
 
-```bash
-$ docker compose up -d postgres
+    subgraph VPC["cloud-project-vpc (10.0.0.0/16)"]
+
+        subgraph PUB["🟢 Subnet Pública"]
+            ALB["⚖️ ALB"]
+        end
+
+        subgraph PRIV_ECS["🔒 Subnets Privadas — ECS (10.0.14.x / 10.0.16.x)"]
+            ECS1["⚙️ ECS Task 1\nNestJS · 10.0.14.32\nus-east-2a"]
+            ECS2["⚙️ ECS Task 2\nNestJS · 10.0.16.236\nus-east-2b"]
+        end
+
+        subgraph PRIV_LAMBDA["🔒 Subnets Privadas — Lambda (10.0.128.x / 10.0.144.x)"]
+            L1["λ validate-transaction\nus-east-2a"]
+            L2["λ process-transaction\nus-east-2b"]
+        end
+
+        subgraph PRIV_RDS["🔒 Subnet Privada — Dados"]
+            PROXY["🔗 RDS Proxy"]
+            RDS["🗄️ RDS PostgreSQL\ndemay-bank-db"]
+        end
+
+    end
 ```
 
-Then set `DATABASE_URL` in your `.env` to point to the local database:
+### Fluxo ECS — Gerenciamento de Usuários
+```
+Cliente → ALB (Load Balancer) → ECS (NestJS API) → RDS PostgreSQL
+```
+
+### Fluxo Assíncrono — Transações Financeiras
+```
+Cliente → API Gateway → Lambda 1 (validação + enfileiramento)
+                      → SQS (fila) → Lambda 2 (processamento) → RDS PostgreSQL
+```
+
+---
+
+## Banco de Dados
+
+```mermaid
+erDiagram
+    User {
+        int id PK
+        string name
+        string email
+        string password
+        decimal balance
+    }
+
+    Transfer {
+        int id PK
+        int senderId FK
+        int recipientId FK
+        decimal amount
+        string status
+        datetime createdAt
+    }
+
+    User ||--o{ Transfer : "envia"
+    User ||--o{ Transfer : "recebe"
+```
+
+### Tabela `User`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | `INT` PK | Identificador único |
+| `name` | `VARCHAR` | Nome do usuário |
+| `email` | `VARCHAR` UNIQUE | E-mail de acesso |
+| `password` | `VARCHAR` | Senha |
+| `balance` | `DECIMAL` | Saldo da conta |
+
+### Tabela `Transfer`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | `INT` PK | Identificador único |
+| `senderId` | `INT` FK → User | Remetente |
+| `recipientId` | `INT` FK → User | Destinatário |
+| `amount` | `DECIMAL` | Valor da transferência |
+| `status` | `VARCHAR` | `in_process` / `completed` / `refused` |
+| `createdAt` | `TIMESTAMP` | Data de criação |
+
+---
+
+## Arquitetura do Código
+
+O backend segue os princípios de **Arquitetura em Camadas Verticais** (Vertical Slice) combinados com **Clean Code**, organizando o código por domínio de negócio em vez de por tipo técnico.
+
+### Camadas por módulo
+
+```
+user/
+├── controller/   ← Recebe a requisição HTTP, valida input, delega para o service
+├── service/      ← Contém a lógica de negócio (regras, orquestração)
+├── repository/   ← Acesso ao banco de dados (abstração do Prisma)
+├── entities/     ← Definição do modelo de dados e validações (class-validator)
+└── dtos/         ← Objetos de transferência de dados (entrada/saída da API)
+```
+
+Cada módulo é **independente e coeso** — o módulo `user` não conhece o módulo `dashboard` e vice-versa. Isso reduz acoplamento e facilita evolução e testes isolados.
+
+### Princípios aplicados
+
+| Princípio | Aplicação |
+|-----------|-----------|
+| **Single Responsibility** | Cada classe tem uma única responsabilidade (Controller só roteia, Service só processa, Repository só persiste) |
+| **Separation of Concerns** | Lógica de negócio separada da infraestrutura (banco, HTTP) |
+| **Dependency Injection** | NestJS injeta as dependências automaticamente via construtores |
+| **DTO Pattern** | Entradas e saídas da API são tipadas e validadas via DTOs separados da entidade |
+| **Repository Pattern** | O acesso ao banco é abstraído — o Service nunca faz queries diretamente |
+
+---
+
+## Endpoints da API
+
+Documentação Swagger disponível em `/api` após subir o servidor.
+
+### Usuários — ECS via ALB
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/health` | Health check |
+| `GET` | `/user` | Lista todos os usuários |
+| `POST` | `/user/register` | Cadastra novo usuário |
+| `POST` | `/user/login` | Autentica usuário |
+
+### Transações — API Gateway → Lambda
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/transactions` | Cria e enfileira uma transação |
+
+**Body:**
+```json
+{
+  "id_sender": 1,
+  "id_receptor": 2,
+  "valor": 100.00
+}
+```
+
+---
+
+## Estrutura do Projeto
+
+```
+cloud-backend/
+├── src/
+│   ├── main.ts                           # Entry point (NestJS + Swagger)
+│   ├── app.module.ts                     # Módulo raiz
+│   ├── database/
+│   │   └── prisma.service.ts             # Conexão com o banco via Prisma
+│   ├── user/
+│   │   ├── controller/user.controller.ts
+│   │   ├── service/user.service.ts
+│   │   ├── repository/user.repository.ts
+│   │   ├── entities/user.entity.ts
+│   │   └── dtos/
+│   │       ├── register.dto.ts
+│   │       ├── login.dto.ts
+│   │       └── user-response.dto.ts
+│   └── dashboard/
+│       ├── controller/transactions.controller.tsx
+│       ├── service/transaction.service.tsx
+│       ├── repository/transaction.repository.tsx
+│       ├── entities/transactions.entities.tsx
+│       └── dtos/transactions.dto.tsx
+├── prisma/
+│   └── schema.prisma                     # Schema do banco de dados
+├── load-tests/
+│   ├── demay-bank-load-test.jmx          # Plano de testes JMeter
+│   └── relatorio/                        # Relatório técnico dos testes
+└── .env                                  # Variáveis de ambiente (não versionado)
+```
+
+---
+
+## Como Rodar Localmente
+
+### Pré-requisitos
+
+- [Node.js](https://nodejs.org/) v18+
+- [pnpm](https://pnpm.io/)
+- [Docker](https://www.docker.com/)
+
+### 1. Clonar o repositório
 
 ```bash
+git clone https://github.com/enzochristo/cloud-backend.git
+cd cloud-backend
+```
+
+### 2. Instalar dependências
+
+```bash
+pnpm install
+```
+
+### 3. Configurar variáveis de ambiente
+
+Crie um arquivo `.env` na raiz:
+
+```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/demaybank?schema=public"
+PORT=3000
+HOST=0.0.0.0
 ```
 
-If this is the first time you are using the local database, create the tables:
+### 4. Subir o banco com Docker
 
 ```bash
-$ npx prisma db push
+docker run --name demay-bank-db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=demaybank \
+  -p 5432:5432 \
+  -d postgres:15
 ```
 
-## Compile and run the project
+### 5. Criar as tabelas
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npx prisma db push
 ```
 
-## Run tests
+### 6. Iniciar o servidor
 
 ```bash
-# unit tests
-$ npm run test
+# Desenvolvimento (hot reload)
+pnpm start:dev
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Produção
+pnpm build && pnpm start:prod
 ```
 
-## Deployment
+### 7. Acessar
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Recurso | URL |
+|---------|-----|
+| API | `http://localhost:3000` |
+| Swagger | `http://localhost:3000/api` |
+| Health | `http://localhost:3000/health` |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+## Infraestrutura AWS
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+| Serviço | Uso |
+|---------|-----|
+| **ECS Fargate** | Execução do servidor NestJS em container |
+| **ALB** | Load balancer para o ECS |
+| **API Gateway** | Exposição do endpoint de transações |
+| **Lambda 1** | Validação e enfileiramento de transações |
+| **Lambda 2** | Processamento assíncrono e atualização de status |
+| **SQS** | Fila de mensagens entre Lambda 1 e Lambda 2 |
+| **RDS PostgreSQL** | Banco de dados relacional |
+| **RDS Proxy** | Pool de conexões para o banco |
+| **Secrets Manager** | Credenciais do banco de dados |
+| **S3 + CloudFront** | Hospedagem do frontend |
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Testes de Carga
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Realizados com **Apache JMeter 5.6.3** contra o ambiente de produção AWS.
 
-## Support
+| Cenário | Threads | Requisições | Error % | Latência Média |
+|---------|---------|-------------|---------|----------------|
+| Health Check (Baseline) | 50 | 500 | 0% | 159ms |
+| Login Simultâneo | 50 | 500 | 0,4% | 867ms |
+| Transações Alta Escala | 100 | 1.000 | 0% | 963ms |
+| Consultas Simultâneas | 150 | 3.000 | 0% | 680ms |
+| Rajada (Burst) | 300 | 900 | 0% | 2.504ms |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**1.907 transações processadas de ponta a ponta** (API Gateway → Lambda → SQS → Lambda → RDS) sem nenhuma perda.
