@@ -9,7 +9,7 @@ Projeto da disciplina **Computação em Nuvem — Insper 2026**.
 
 | Recurso | Link |
 |---------|------|
-| 🖥️ Frontend | [DemayBank](https://dnf6w4c31atxz.cloudfront.net/) |
+| 🖥️ Frontend | [DemayBank](https://dnf6w4c31atxz.cloudfront.net/register) |
 | 🎥 Vídeo de Apresentação | `<!-- ADICIONAR LINK DO YOUTUBE -->` |
 | 📊 Relatório de Testes de Carga | [Acessar](https://enzochristo.github.io/cloud-backend/) |
 
