@@ -55,8 +55,43 @@ graph TB
     SERVER -->|RDS| PG
     CLIENT -->|API GATEWAY| VAL
     VAL -->|enfileira| FILA
-    FILA -->|enfileira| PROC
+    FILA -->|trigger| PROC
     PROC -->|RDS Proxy| PG
+```
+
+### Topologia de Rede — VPC
+
+```mermaid
+graph TB
+    subgraph FORA["Fora da VPC"]
+        INTERNET["🌐 Internet"]
+        CF["☁️ S3 + CloudFront"]
+        APIGW["🔀 API Gateway"]
+        SQS["📨 SQS"]
+    end
+
+    subgraph VPC["cloud-project-vpc (10.0.0.0/16)"]
+
+        subgraph PUB["🟢 Subnet Pública"]
+            ALB["⚖️ ALB"]
+        end
+
+        subgraph PRIV_ECS["🔒 Subnets Privadas — ECS (10.0.14.x / 10.0.16.x)"]
+            ECS1["⚙️ ECS Task 1\nNestJS · 10.0.14.32\nus-east-2a"]
+            ECS2["⚙️ ECS Task 2\nNestJS · 10.0.16.236\nus-east-2b"]
+        end
+
+        subgraph PRIV_LAMBDA["🔒 Subnets Privadas — Lambda (10.0.128.x / 10.0.144.x)"]
+            L1["λ validate-transaction\nus-east-2a"]
+            L2["λ process-transaction\nus-east-2b"]
+        end
+
+        subgraph PRIV_RDS["🔒 Subnet Privada — Dados"]
+            PROXY["🔗 RDS Proxy"]
+            RDS["🗄️ RDS PostgreSQL\ndemay-bank-db"]
+        end
+
+    end
 ```
 
 ### Fluxo ECS — Gerenciamento de Usuários
